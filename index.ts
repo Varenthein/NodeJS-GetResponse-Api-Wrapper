@@ -1,4 +1,4 @@
-import { GetResponseCampaign, GetResponseCampaignSummary, HTTPMethod } from "./types";
+import { GetResponseBlocklistMask, GetResponseCampaign, GetResponseCampaignSummary, GetResponseCreateCampaignData, GetResponseQueryFlag, GetResponseUpdateCampaignData, HTTPMethod, IsInUnion } from "./types";
 import { paramsObjToUrlFD, responseHeadersToObj } from "./utils";
 
 export class GetResponse {
@@ -108,4 +108,61 @@ export class GetResponse {
       fields
     });
   }
+
+  /**
+   * Update campaign details.
+   * @param campaignId The campaign ID
+   * @param data Data to update
+   * @returns 
+   */
+  async updateCampaign(
+    campaignId: string,
+    data: GetResponseUpdateCampaignData 
+  ): Promise<Omit<GetResponseCampaign, "campaignId">> {
+    return await this.#makeApiRequest("/campaigns/" + campaignId, "POST", data);
+  }
+
+  /**
+   * Create new campaign.
+   * @param campaignId The campaign ID
+   * @param data Data to update
+   * @returns 
+   */
+  async createCampaign(
+    data: GetResponseCreateCampaignData 
+  ): Promise<Omit<GetResponseCampaign, "campaignId">> {
+    return await this.#makeApiRequest("/campaigns", "POST", data);
+  }
+
+  /**
+   * Update campaign blocklist masks.
+   * campaignId: The campaign ID
+   * additionalFlags: "add" "delete" "noResponse". The flag value add adds the masks provided in the request body to your blocklist. The flag value delete deletes the masks. The masks are replaced if there are no flag values in the request body. For better performance, use the flag value noResponse. It removes the response body and can be used alone or combined with other flags.
+   * masks: Array of masks
+   */
+  async updateCampaignBlocklistMasks<T extends GetResponseQueryFlag>(
+    campaignId: string,
+    masks: GetResponseBlocklistMask[],
+    additionalFlags?: T[],
+  ): Promise<IsInUnion<T, "noResponse"> extends true 
+    ?  undefined
+    : { masks: GetResponseBlocklistMask[] }
+  > {
+    return await this.#makeApiRequest("/campaigns/" + campaignId + "?additionalFlags=" + additionalFlags?.join(","), "POST", {
+      masks
+    });
+  }
+
+  /**
+   * Get campaign blocklist masks.
+   * campaignId: The campaign ID
+   * mask: Blocklist mask to search for
+   */
+  async getCampaignBlocklistMasks(
+    campaignId: string,
+    mask?: GetResponseBlocklistMask
+  ): Promise<{ masks: GetResponseBlocklistMask[] }> {
+    return await this.#makeApiRequest("/campaigns/" + campaignId + "?mask=" + mask, "GET");
+  }
+
 }
